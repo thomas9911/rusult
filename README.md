@@ -7,7 +7,7 @@ Result struct based on the Rust Result object.
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `result` to your list of dependencies in `mix.exs`:
+by adding `rusult` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
