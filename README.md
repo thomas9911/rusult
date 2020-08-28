@@ -9,17 +9,17 @@ Implemented Rust Result stable functions (1.46):
 
 - and ❌
 - and_then ✔️ `and_then/2`
-- err ❌
+- err ✔️ `error_or_nil/1`
 - expect ✔️ `expect!/2`
 - expect_err ✔️ `expect_err!/2`
-- is_err ✔️ `err?/0`
+- is_err ✔️ `error?/0`
 - is_ok ✔️ `ok?/0`
 - iter ❌
-- map ❌
-- map_err ❌
+- map ✔️ `map/2`
+- map_err ✔️ `map_err/2`
 - map_or ❌
 - map_or_else ❌
-- ok ❌
+- ok ✔️ `ok_or_nil/1`
 - or ❌
 - or_else ✔️ `or_else/2`
 - unwrap ✔️ `unwrap!/1`
@@ -27,6 +27,10 @@ Implemented Rust Result stable functions (1.46):
 - unwrap_or ✔️ `unwrap_or/2`
 - unwrap_or_else ✔️ `unwrap_or_else/2`
 
+Extra functions:
+
+- `unwrap_err_or/2`
+- `unwrap_err_or_else/2`
 
 ## Examples
 
@@ -38,8 +42,9 @@ iex> {:ok, 123} |> Rusult.from() |> Rusult.unwrap!()
 ```elixir
 iex> {:ok, 1, 2}  
 ...> |> Rusult.from()
-...> |> Rusult.and_then(fn {a, b} -> a + b end)
-3
+...> |> Rusult.and_then(fn {a, b} -> Rusult.ok(a + b) end)
+...> |> Rusult.to_tuple()
+{:ok, 3}
 ```
 
 ```elixir
