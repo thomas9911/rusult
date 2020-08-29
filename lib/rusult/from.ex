@@ -1,6 +1,10 @@
 defmodule Rusult.From do
   @moduledoc false
 
+  def from(%Rusult{} = result) do
+    result
+  end
+
   def from({:error, error}) do
     Rusult.error(error)
   end

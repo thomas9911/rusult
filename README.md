@@ -7,20 +7,20 @@ Result struct based on the Rust Result object.
 
 Implemented Rust Result stable functions (1.46):
 
-- and ❌
+- and ✔️ `if_err/2`
 - and_then ✔️ `and_then/2`
 - err ✔️ `error_or_nil/1`
 - expect ✔️ `expect!/2`
 - expect_err ✔️ `expect_err!/2`
 - is_err ✔️ `error?/0`
 - is_ok ✔️ `ok?/0`
-- iter ❌
+- iter ✔️ `ok_or_nil/1`
 - map ✔️ `map/2`
 - map_err ✔️ `map_err/2`
-- map_or ❌
-- map_or_else ❌
+- map_or ✔️ `map_or/3`
+- map_or_else ✔️ `map_or_else/3`
 - ok ✔️ `ok_or_nil/1`
-- or ❌
+- or ✔️ `if_ok/2`
 - or_else ✔️ `or_else/2`
 - unwrap ✔️ `unwrap!/1`
 - unwrap_err ✔️ `unwrap_err!/1`
@@ -29,8 +29,17 @@ Implemented Rust Result stable functions (1.46):
 
 Extra functions:
 
+- `map_err_or/3`
 - `unwrap_err_or/2`
 - `unwrap_err_or_else/2`
+- `wrap/1`
+
+Implemented Rust Result unstable functions (1.46):
+
+- contains ❌
+- contains_err ❌
+- flatten ❌
+- into_ok ❌
 
 ## Examples
 

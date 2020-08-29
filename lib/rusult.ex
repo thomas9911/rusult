@@ -7,20 +7,20 @@ defmodule Rusult do
 
   Implemented Rust Result stable functions (1.46):
 
-  - and ❌
+  - and ✔️ `if_err/2`
   - and_then ✔️ `and_then/2`
   - err ✔️ `error_or_nil/1`
   - expect ✔️ `expect!/2`
   - expect_err ✔️ `expect_err!/2`
   - is_err ✔️ `error?/0`
   - is_ok ✔️ `ok?/0`
-  - iter ❌
+  - iter ✔️ `ok_or_nil/1`
   - map ✔️ `map/2`
   - map_err ✔️ `map_err/2`
-  - map_or ❌
-  - map_or_else ❌
+  - map_or ✔️ `map_or/3`
+  - map_or_else ✔️ `map_or_else/3`
   - ok ✔️ `ok_or_nil/1`
-  - or ❌
+  - or ✔️ `if_ok/2`
   - or_else ✔️ `or_else/2`
   - unwrap ✔️ `unwrap!/1`
   - unwrap_err ✔️ `unwrap_err!/1`
@@ -29,8 +29,17 @@ defmodule Rusult do
 
   Extra functions:
 
+  - `map_err_or/3`
   - `unwrap_err_or/2`
   - `unwrap_err_or_else/2`
+  - `wrap/1`
+
+  Implemented Rust Result unstable functions (1.46):
+  
+  - contains ❌
+  - contains_err ❌
+  - flatten ❌
+  - into_ok ❌
 
   ## Examples
 
@@ -68,13 +77,13 @@ defmodule Rusult do
 
   @type t :: %__MODULE__{error: any, ok: any, error?: boolean, ok?: boolean}
   @type function_out :: any
+  @type default :: any
 
   @enforce_keys [:error?, :ok?]
   defstruct [:error, :ok, :error?, :ok?]
 
   @doc """
   Creates a :error
-
 
   ```
   iex> Rusult.error(:anything)
@@ -88,6 +97,7 @@ defmodule Rusult do
 
   @doc """
   Creates a :ok
+
   ```
   iex> Rusult.ok(:anything)
   %Rusult{error?: false, ok?: true, ok: :anything}
@@ -100,6 +110,7 @@ defmodule Rusult do
 
   @doc """
   Create Rusult based on the input
+
   ```
   iex> Rusult.from(:anything)
   %Rusult{error?: false, ok?: true, ok: :anything}
@@ -125,8 +136,13 @@ defmodule Rusult do
 
   @doc """
   Alias for `from/1`
+
+  ```
+  iex> Rusult.wrap(:anything)
+  %Rusult{error?: false, ok?: true, ok: :anything}
+  ```
   """
-  def wrap(any), do: from(any)
+  defdelegate wrap(any), to: Rusult.From, as: :from
 
   @doc """
   Convert a Rusult back to a elixir error tuple.
@@ -413,13 +429,7 @@ defmodule Rusult do
   like `or_else/2` or `map/2`
   """
   @spec and_then(__MODULE__.t(), (any -> function_out)) :: function_out | __MODULE__.t()
-  def and_then(%__MODULE__{ok?: true, ok: ok}, func) do
-    func.(ok)
-  end
-
-  def and_then(%__MODULE__{error?: true} = result, _) do
-    result
-  end
+  defdelegate and_then(result, func), to: Rusult.Binary
 
   @doc """
   Applies the function if the Rusult is :error
@@ -454,29 +464,25 @@ defmodule Rusult do
   like `and_then/2` or `map_err/2`
   """
   @spec or_else(__MODULE__.t(), (any -> function_out)) :: function_out | __MODULE__.t()
-  def or_else(%__MODULE__{ok?: true} = result, _) do
-    result
-  end
-
-  def or_else(%__MODULE__{error?: true, error: error}, func) do
-    func.(error)
-  end
+  defdelegate or_else(result, func), to: Rusult.Binary
 
   @doc """
   Applies the function if the Rusult is :ok and wraps the output in an :ok
 
+  Because in Elixir you can overload functions `map/3` is an alias for `map_or/3`
+
   ```
-  iex> [1,2,3,4]
+  iex> [1, 2, 3, 4]
   ...> |> Rusult.ok()
   ...> |> Rusult.map(fn x -> Enum.sum(x) end)
   ...> |> Rusult.map(fn x -> x + 5 end)
   Rusult.ok(15)
 
-  iex> [1,2,3,4]
+  iex> [1, 2, 3, 4]
   ...> |> Rusult.error()
   ...> |> Rusult.map(fn x -> Enum.sum(x) end)
   ...> |> Rusult.map(fn x -> x + 5 end)
-  Rusult.error([1,2,3,4])
+  Rusult.error([1, 2, 3, 4])
   ``` 
   """
   @spec map(__MODULE__.t(), (any -> any)) :: __MODULE__.t()
@@ -488,21 +494,26 @@ defmodule Rusult do
     error
   end
 
+  @spec map(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
+  def map(%__MODULE__{} = result, default, func) do
+    map_or(result, default, func)
+  end
+
   @doc """
   Applies the function if the Rusult is :error and wraps the output in an :error
 
   ```
-  iex> [1,2,3,4]
+  iex> [1, 2, 3, 4]
   ...> |> Rusult.error()
   ...> |> Rusult.map_err(fn x -> Enum.sum(x) end)
   ...> |> Rusult.map_err(fn x -> x + 5 end)
   Rusult.error(15)
 
-  iex> [1,2,3,4]
+  iex> [1, 2, 3, 4]
   ...> |> Rusult.ok()
   ...> |> Rusult.map_err(fn x -> Enum.sum(x) end)
   ...> |> Rusult.map_err(fn x -> x + 5 end)
-  Rusult.ok([1,2,3,4])
+  Rusult.ok([1, 2, 3, 4])
   ``` 
   """
   @spec map_err(__MODULE__.t(), (any -> any)) :: __MODULE__.t()
@@ -513,4 +524,137 @@ defmodule Rusult do
   def map_err(%__MODULE__{error?: true, error: error}, func) do
     Rusult.error(func.(error))
   end
+
+  @doc """
+  Applies the function if the Rusult is :ok and returns the output of the function. If it is an :error return the default.
+
+  ```
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.ok()
+  ...> |> Rusult.map_or(120, fn x -> Enum.sum(x) end)
+  10
+
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.error()
+  ...> |> Rusult.map_or(120, fn x -> Enum.sum(x) end)
+  120
+  ``` 
+  """
+  @spec map_or(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
+  def map_or(%__MODULE__{} = result, default, func) do
+    result |> map(func) |> unwrap_or(default)
+  end
+
+  @doc """
+  Applies the function if the Rusult is :error and returns the output of the function. If it is an :ok return the default.
+
+  ```
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.error()
+  ...> |> Rusult.map_err_or(120, fn x -> Enum.sum(x) end)
+  10
+
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.ok()
+  ...> |> Rusult.map_err_or(120, fn x -> Enum.sum(x) end)
+  120
+  ``` 
+  """
+  @spec map_err_or(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
+  def map_err_or(%__MODULE__{} = result, default, func) do
+    result |> map_err(func) |> unwrap_err_or(default)
+  end
+
+  @doc """
+  Applies the first function if the Rusult is :error and returns the output of the function. Applies the second function if the Rusult is :ok and returns the output of the function.
+
+  ```
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.ok()
+  ...> |> Rusult.map_or_else(
+  ...>     fn e -> Enum.concat(e, [15, 20]) end, 
+  ...>     fn x -> Enum.sum(x) end
+  ...> )
+  10
+
+  iex> [1, 2, 3, 4]
+  ...> |> Rusult.error()
+  ...> |> Rusult.map_or_else(
+  ...>     fn e -> Enum.concat(e, [15, 20]) end, 
+  ...>     fn x -> Enum.sum(x) end
+  ...> )
+  [1, 2, 3, 4, 15, 20]
+  ``` 
+  """
+  @spec map_or_else(__MODULE__.t(), (any -> default), (any -> function_out)) ::
+          function_out | default
+  def map_or_else(%__MODULE__{ok?: true, ok: ok}, _, ok_function) do
+    ok_function.(ok)
+  end
+
+  def map_or_else(%__MODULE__{error?: true, error: error}, error_function, _) do
+    error_function.(error)
+  end
+
+  @doc """
+  If :ok returns the first argument otherwise return the second argument
+
+  ```
+  iex> a = Rusult.ok([1, 2, 3, 4])
+  iex> b = Rusult.ok(:something)
+  iex> Rusult.if_ok(a, b)
+  Rusult.ok([1, 2, 3, 4])
+
+  iex> a = Rusult.error(:error)
+  iex> b = Rusult.ok(:something)
+  iex> Rusult.if_ok(a, b)
+  Rusult.ok(:something)
+  ```
+
+  It is similar to using just an if statement like:
+  ```
+  iex> a = Rusult.ok([1, 2, 3, 4])
+  iex> b = Rusult.ok(:something)
+  iex> if a.ok? do
+  ...>     a
+  ...> else
+  ...>     b
+  ...> end
+  Rusult.ok([1, 2, 3, 4])
+  ```
+
+  """
+  @spec if_ok(__MODULE__.t(), __MODULE__.t() | any) :: __MODULE__.t() | any
+  defdelegate if_ok(lhs, rhs), to: Rusult.Binary
+
+  @doc """
+  If :error returns the first argument otherwise return the second argument
+
+  ```
+  iex> a = Rusult.ok([1, 2, 3, 4])
+  iex> b = Rusult.ok(:something)
+  iex> Rusult.if_err(a, b)
+  Rusult.ok(:something)
+
+  iex> a = Rusult.error(:error)
+  iex> b = Rusult.ok(:something)
+  iex> Rusult.if_err(a, b)
+  Rusult.error(:error)
+  ```
+
+  It is similar to using just an if statement like:
+  ```
+  iex> a = Rusult.error(:error)
+  iex> b = Rusult.ok(:something)
+  iex> if a.error? do
+  ...>     a
+  ...> else
+  ...>     b
+  ...> end
+  Rusult.error(:error)
+  ```
+
+  """
+  @spec if_err(__MODULE__.t(), __MODULE__.t() | any) :: __MODULE__.t() | any
+  defdelegate if_err(lhs, rhs), to: Rusult.Binary
 end
