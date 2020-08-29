@@ -35,7 +35,7 @@ defmodule Rusult do
   - `wrap/1`
 
   Implemented Rust Result unstable functions (1.46):
-  
+
   - contains ❌
   - contains_err ❌
   - flatten ❌
