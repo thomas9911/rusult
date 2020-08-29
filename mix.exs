@@ -7,11 +7,11 @@ defmodule Rusult.MixProject do
       version: "1.0.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
+      name: "Rusult",
       deps: deps(),
-      licenses: "Unlicense",
+      package: package(),
       description: "Result struct based on the Rust Result object.",
       source_url: "https://github.com/thomas9911/rusult",
-      links: %{"GitHub" => "https://github.com/thomas9911/rusult"},
       docs: [
         main: "Rusult",
         extra_section: []
@@ -28,6 +28,13 @@ defmodule Rusult.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["Unlicense"],
+      links: %{"GitHub" => "https://github.com/thomas9911/rusult"}
     ]
   end
 end
