@@ -1,6 +1,6 @@
 # Rusult
 
-![Hex.pm](https://img.shields.io/hexpm/v/rusult)
+[![Hex.pm](https://img.shields.io/hexpm/v/rusult)](https://hex.pm/packages/rusult)
 ![Hex.pm](https://img.shields.io/hexpm/l/rusult)
 ![Hex.pm](https://img.shields.io/hexpm/dt/rusult)
 ## Installation

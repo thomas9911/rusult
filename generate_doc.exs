@@ -2,7 +2,7 @@
 
 IO.puts("# Rusult\n")
 
-IO.puts("![Hex.pm](https://img.shields.io/hexpm/v/rusult)")
+IO.puts("[![Hex.pm](https://img.shields.io/hexpm/v/rusult)](https://hex.pm/packages/rusult)")
 IO.puts("![Hex.pm](https://img.shields.io/hexpm/l/rusult)")
 IO.puts("![Hex.pm](https://img.shields.io/hexpm/dt/rusult)")
 
