@@ -1,5 +1,22 @@
 # Rusult
 
+![Hex.pm](https://img.shields.io/hexpm/v/rusult)
+![Hex.pm](https://img.shields.io/hexpm/l/rusult)
+![Hex.pm](https://img.shields.io/hexpm/dt/rusult)
+## Installation
+
+The package can be installed by adding `rusult` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:rusult, "~> 1.0.0"}
+  ]
+end
+```
+
+## Description
+
 Result struct based on the Rust Result object.
   
 \>\> Rust Result << -> Rusult
