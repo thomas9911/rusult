@@ -75,6 +75,8 @@ defmodule Rusult do
   ```
   """
 
+  @behaviour Rusult.Behaviour
+
   @type t :: %__MODULE__{error: any, ok: any, error?: boolean, ok?: boolean}
   @type function_out :: any
   @type default :: any
