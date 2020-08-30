@@ -1,7 +1,7 @@
 defmodule Rusult.From do
   @moduledoc false
 
-  def from(%Rusult{} = result) do
+  def from(%_{} = result) do
     result
   end
 
