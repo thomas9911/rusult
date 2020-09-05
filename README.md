@@ -107,6 +107,10 @@ iex> defmodule MyRusult do
 ...>     def from(%Rusult{error: error, ok: _ok, error?: true, ok?: false}) do
 ...>        %MyRusult{ok?: false, error?: true, error: error}
 ...>     end
+...>
+...>     def from(%MyRusult{} = my_result) do
+...>        my_result
+...>     end
 ...>     
 ...>     def from(data) when is_map(data) do
 ...>        %MyRusult{ok?: true, error?: false, ok: data}
@@ -125,9 +129,9 @@ iex> %{data: [1,2,3,4]}
 iex> "testing"
 ...> |> MyRusult.from()
 ...> |> Rusult.map(fn %{data: data} -> Enum.sum(data) end)
-...> |>IO.inspect()
 ...> |> MyRusult.from()
-%{ok?: false, error?: true, error: "invalid data"}
+...> |> Map.from_struct()
+%{ok?: false, error?: true, error: "invalid data", ok: nil}
 ```
 
 
