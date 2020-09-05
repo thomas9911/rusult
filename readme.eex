@@ -1,0 +1,21 @@
+# <%= module_name %>
+
+[![Hex.pm](https://img.shields.io/hexpm/v/rusult)](https://hex.pm/packages/rusult)
+![Hex.pm](https://img.shields.io/hexpm/l/rusult)
+![Hex.pm](https://img.shields.io/hexpm/l/rusult)
+
+## Installation
+
+The package can be installed by adding `rusult` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:rusult, "~> 1.0.0"}
+  ]
+end
+```
+
+## Description
+
+<%= module_doc %>
