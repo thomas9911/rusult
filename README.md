@@ -3,6 +3,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/rusult)](https://hex.pm/packages/rusult)
 ![Hex.pm](https://img.shields.io/hexpm/l/rusult)
 ![Hex.pm](https://img.shields.io/hexpm/dt/rusult)
+
 ## Installation
 
 The package can be installed by adding `rusult` to your list of dependencies in `mix.exs`:
@@ -90,4 +91,43 @@ iex> defmodule MyModule do
 ...> |> Rusult.expect_err!("this is ok?")
 :found_error
 ```
+
+Use your own Rusult module.
+
+```elixir
+iex> defmodule MyRusult do
+...>     @type t :: %__MODULE__{error: binary, ok: map, error?: boolean, ok?: boolean}
+...>     @enforce_keys [:error?, :ok?]
+...>     defstruct [:error, :ok, :error?, :ok?] 
+...>
+...>     def from(%Rusult{error: _error, ok: ok, error?: false, ok?: true}) do
+...>        from(ok)
+...>     end
+...>     
+...>     def from(%Rusult{error: error, ok: _ok, error?: true, ok?: false}) do
+...>        %MyRusult{ok?: false, error?: true, error: error}
+...>     end
+...>     
+...>     def from(data) when is_map(data) do
+...>        %MyRusult{ok?: true, error?: false, ok: data}
+...>     end
+...>
+...>     def from(_data) do
+...>        %MyRusult{ok?: false, error?: true, error: "invalid data"}
+...>     end
+...> end
+iex> %{data: [1,2,3,4]}
+...> |> MyRusult.from()
+...> |> Rusult.map(fn %{data: data} -> %{data: Enum.sum(data)} end)
+...> |> MyRusult.from()
+...> |> Map.from_struct()
+%{ok?: true, error?: false, ok: %{data: 10}, error: nil}
+iex> "testing"
+...> |> MyRusult.from()
+...> |> Rusult.map(fn %{data: data} -> Enum.sum(data) end)
+...> |>IO.inspect()
+...> |> MyRusult.from()
+%{ok?: false, error?: true, error: "invalid data"}
+```
+
 

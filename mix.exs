@@ -27,7 +27,8 @@ defmodule Rusult.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:mix_readme, "~> 0.1.0", runtime: false}
     ]
   end
 

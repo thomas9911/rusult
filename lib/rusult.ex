@@ -73,9 +73,48 @@ defmodule Rusult do
   ...> |> Rusult.expect_err!("this is ok?")
   :found_error
   ```
+
+  Use your own Rusult module.
+
+  ```elixir
+  iex> defmodule MyRusult do
+  ...>     @type t :: %__MODULE__{error: binary, ok: map, error?: boolean, ok?: boolean}
+  ...>     @enforce_keys [:error?, :ok?]
+  ...>     defstruct [:error, :ok, :error?, :ok?] 
+  ...>
+  ...>     def from(%Rusult{error: _error, ok: ok, error?: false, ok?: true}) do
+  ...>        from(ok)
+  ...>     end
+  ...>     
+  ...>     def from(%Rusult{error: error, ok: _ok, error?: true, ok?: false}) do
+  ...>        %MyRusult{ok?: false, error?: true, error: error}
+  ...>     end
+  ...>     
+  ...>     def from(data) when is_map(data) do
+  ...>        %MyRusult{ok?: true, error?: false, ok: data}
+  ...>     end
+  ...>
+  ...>     def from(_data) do
+  ...>        %MyRusult{ok?: false, error?: true, error: "invalid data"}
+  ...>     end
+  ...> end
+  iex> %{data: [1,2,3,4]}
+  ...> |> MyRusult.from()
+  ...> |> Rusult.map(fn %{data: data} -> %{data: Enum.sum(data)} end)
+  ...> |> MyRusult.from()
+  ...> |> Map.from_struct()
+  %{ok?: true, error?: false, ok: %{data: 10}, error: nil}
+  iex> "testing"
+  ...> |> MyRusult.from()
+  ...> |> Rusult.map(fn %{data: data} -> Enum.sum(data) end)
+  ...> |>IO.inspect()
+  ...> |> MyRusult.from()
+  %{ok?: false, error?: true, error: "invalid data"}
+  ```
   """
 
   @type t :: %__MODULE__{error: any, ok: any, error?: boolean, ok?: boolean}
+  @type rusult_struct :: %{error: any, ok: any, error?: boolean, ok?: boolean, __struct__: atom}
   @type function_out :: any
   @type default :: any
 
@@ -90,7 +129,7 @@ defmodule Rusult do
   %Rusult{error?: true, ok?: false, error: :anything}
   ```
   """
-  @spec error(any) :: __MODULE__.t()
+  @spec error(any) :: rusult_struct
   def error(error) do
     %Rusult{error: error, error?: true, ok?: false}
   end
@@ -103,7 +142,7 @@ defmodule Rusult do
   %Rusult{error?: false, ok?: true, ok: :anything}
   ```
   """
-  @spec ok(any) :: __MODULE__.t()
+  @spec ok(any) :: rusult_struct
   def ok(ok \\ nil) do
     %Rusult{ok: ok, error?: false, ok?: true}
   end
@@ -131,7 +170,7 @@ defmodule Rusult do
   %Rusult{error?: true, ok?: false, error: "failed"}
   ```
   """
-  @spec from(any) :: __MODULE__.t()
+  @spec from(any) :: rusult_struct
   defdelegate from(any), to: Rusult.From
 
   @doc """
@@ -188,8 +227,8 @@ defmodule Rusult do
   ** (RuntimeError) expected :ok, got {1, 2, 3}
   ```
   """
-  @spec unwrap!(__MODULE__.t()) :: any
-  def unwrap!(%__MODULE__{error: error} = result) do
+  @spec unwrap!(rusult_struct) :: any
+  def unwrap!(%_{error: error} = result) do
     expect!(result, "expected :ok, got #{inspect(error)}")
   end
 
@@ -206,8 +245,8 @@ defmodule Rusult do
   {1, 2, 3}
   ```
   """
-  @spec unwrap_err!(__MODULE__.t()) :: any
-  def unwrap_err!(%__MODULE__{ok: ok} = result) do
+  @spec unwrap_err!(rusult_struct) :: any
+  def unwrap_err!(%_{ok: ok} = result) do
     expect_err!(result, "expected :error, got #{inspect(ok)}")
   end
 
@@ -224,12 +263,12 @@ defmodule Rusult do
   15
   ```
   """
-  @spec unwrap_or(__MODULE__.t(), any) :: any
-  def unwrap_or(%__MODULE__{ok?: true, ok: ok}, _) do
+  @spec unwrap_or(rusult_struct, any) :: any
+  def unwrap_or(%_{ok?: true, ok: ok}, _) do
     ok
   end
 
-  def unwrap_or(%__MODULE__{error?: true}, other) do
+  def unwrap_or(%_{error?: true}, other) do
     other
   end
 
@@ -246,12 +285,12 @@ defmodule Rusult do
   15
   ```
   """
-  @spec unwrap_err_or(__MODULE__.t(), any) :: any
-  def unwrap_err_or(%__MODULE__{error?: true, error: error}, _) do
+  @spec unwrap_err_or(rusult_struct, any) :: any
+  def unwrap_err_or(%_{error?: true, error: error}, _) do
     error
   end
 
-  def unwrap_err_or(%__MODULE__{ok?: true}, other) do
+  def unwrap_err_or(%_{ok?: true}, other) do
     other
   end
 
@@ -268,7 +307,7 @@ defmodule Rusult do
   nil
   ```
   """
-  def ok_or_nil(%__MODULE__{} = result) do
+  def ok_or_nil(%_{} = result) do
     unwrap_or(result, nil)
   end
 
@@ -285,7 +324,7 @@ defmodule Rusult do
   nil
   ```
   """
-  def error_or_nil(%__MODULE__{} = result) do
+  def error_or_nil(%_{} = result) do
     unwrap_err_or(result, nil)
   end
 
@@ -312,12 +351,12 @@ defmodule Rusult do
   6.28318
   ```
   """
-  @spec unwrap_or_else(__MODULE__.t(), (any -> any)) :: any
-  def unwrap_or_else(%__MODULE__{ok?: true, ok: ok}, _) do
+  @spec unwrap_or_else(rusult_struct, (any -> any)) :: any
+  def unwrap_or_else(%_{ok?: true, ok: ok}, _) do
     ok
   end
 
-  def unwrap_or_else(%__MODULE__{error?: true, error: error}, func) do
+  def unwrap_or_else(%_{error?: true, error: error}, func) do
     func.(error)
   end
 
@@ -344,12 +383,12 @@ defmodule Rusult do
   6.28318
   ```
   """
-  @spec unwrap_err_or_else(__MODULE__.t(), (any -> any)) :: any
-  def unwrap_err_or_else(%__MODULE__{error?: true, error: error}, _) do
+  @spec unwrap_err_or_else(rusult_struct, (any -> any)) :: any
+  def unwrap_err_or_else(%_{error?: true, error: error}, _) do
     error
   end
 
-  def unwrap_err_or_else(%__MODULE__{ok?: true, ok: ok}, func) do
+  def unwrap_err_or_else(%_{ok?: true, ok: ok}, func) do
     func.(ok)
   end
 
@@ -366,12 +405,12 @@ defmodule Rusult do
   ** (RuntimeError) bang!
   ```
   """
-  @spec expect!(__MODULE__.t(), binary) :: any
-  def expect!(%__MODULE__{error?: true}, error_message) do
+  @spec expect!(rusult_struct, binary) :: any
+  def expect!(%_{error?: true}, error_message) do
     raise RuntimeError, message: error_message
   end
 
-  def expect!(%__MODULE__{ok?: true, ok: ok}, _) do
+  def expect!(%_{ok?: true, ok: ok}, _) do
     ok
   end
 
@@ -388,12 +427,12 @@ defmodule Rusult do
   {1, 2, 3}
   ```
   """
-  @spec expect_err!(__MODULE__.t(), binary) :: any
-  def expect_err!(%__MODULE__{error?: true, error: error}, _) do
+  @spec expect_err!(rusult_struct, binary) :: any
+  def expect_err!(%_{error?: true, error: error}, _) do
     error
   end
 
-  def expect_err!(%__MODULE__{ok?: true}, error_message) do
+  def expect_err!(%_{ok?: true}, error_message) do
     raise RuntimeError, message: error_message
   end
 
@@ -428,7 +467,7 @@ defmodule Rusult do
 
   like `or_else/2` or `map/2`
   """
-  @spec and_then(__MODULE__.t(), (any -> function_out)) :: function_out | __MODULE__.t()
+  @spec and_then(rusult_struct, (any -> function_out)) :: function_out | rusult_struct
   defdelegate and_then(result, func), to: Rusult.Binary
 
   @doc """
@@ -463,7 +502,7 @@ defmodule Rusult do
   ```
   like `and_then/2` or `map_err/2`
   """
-  @spec or_else(__MODULE__.t(), (any -> function_out)) :: function_out | __MODULE__.t()
+  @spec or_else(rusult_struct, (any -> function_out)) :: function_out | rusult_struct
   defdelegate or_else(result, func), to: Rusult.Binary
 
   @doc """
@@ -485,17 +524,17 @@ defmodule Rusult do
   Rusult.error([1, 2, 3, 4])
   ``` 
   """
-  @spec map(__MODULE__.t(), (any -> any)) :: __MODULE__.t()
-  def map(%__MODULE__{ok?: true, ok: ok}, func) do
+  @spec map(rusult_struct, (any -> any)) :: rusult_struct
+  def map(%_{ok?: true, ok: ok}, func) do
     Rusult.ok(func.(ok))
   end
 
-  def map(%__MODULE__{error?: true} = error, _) do
+  def map(%_{error?: true} = error, _) do
     error
   end
 
-  @spec map(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
-  def map(%__MODULE__{} = result, default, func) do
+  @spec map(rusult_struct, default, (any -> function_out)) :: function_out | default
+  def map(%_{} = result, default, func) do
     map_or(result, default, func)
   end
 
@@ -516,12 +555,12 @@ defmodule Rusult do
   Rusult.ok([1, 2, 3, 4])
   ``` 
   """
-  @spec map_err(__MODULE__.t(), (any -> any)) :: __MODULE__.t()
-  def map_err(%__MODULE__{ok?: true} = result, _) do
+  @spec map_err(rusult_struct, (any -> any)) :: rusult_struct
+  def map_err(%_{ok?: true} = result, _) do
     result
   end
 
-  def map_err(%__MODULE__{error?: true, error: error}, func) do
+  def map_err(%_{error?: true, error: error}, func) do
     Rusult.error(func.(error))
   end
 
@@ -540,8 +579,8 @@ defmodule Rusult do
   120
   ``` 
   """
-  @spec map_or(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
-  def map_or(%__MODULE__{} = result, default, func) do
+  @spec map_or(rusult_struct, default, (any -> function_out)) :: function_out | default
+  def map_or(%_{} = result, default, func) do
     result |> map(func) |> unwrap_or(default)
   end
 
@@ -560,8 +599,8 @@ defmodule Rusult do
   120
   ``` 
   """
-  @spec map_err_or(__MODULE__.t(), default, (any -> function_out)) :: function_out | default
-  def map_err_or(%__MODULE__{} = result, default, func) do
+  @spec map_err_or(rusult_struct, default, (any -> function_out)) :: function_out | default
+  def map_err_or(%_{} = result, default, func) do
     result |> map_err(func) |> unwrap_err_or(default)
   end
 
@@ -586,13 +625,13 @@ defmodule Rusult do
   [1, 2, 3, 4, 15, 20]
   ``` 
   """
-  @spec map_or_else(__MODULE__.t(), (any -> default), (any -> function_out)) ::
+  @spec map_or_else(rusult_struct, (any -> default), (any -> function_out)) ::
           function_out | default
-  def map_or_else(%__MODULE__{ok?: true, ok: ok}, _, ok_function) do
+  def map_or_else(%_{ok?: true, ok: ok}, _, ok_function) do
     ok_function.(ok)
   end
 
-  def map_or_else(%__MODULE__{error?: true, error: error}, error_function, _) do
+  def map_or_else(%_{error?: true, error: error}, error_function, _) do
     error_function.(error)
   end
 
@@ -624,7 +663,7 @@ defmodule Rusult do
   ```
 
   """
-  @spec if_ok(__MODULE__.t(), __MODULE__.t() | any) :: __MODULE__.t() | any
+  @spec if_ok(rusult_struct, rusult_struct | any) :: rusult_struct | any
   defdelegate if_ok(lhs, rhs), to: Rusult.Binary
 
   @doc """
@@ -655,6 +694,6 @@ defmodule Rusult do
   ```
 
   """
-  @spec if_err(__MODULE__.t(), __MODULE__.t() | any) :: __MODULE__.t() | any
+  @spec if_err(rusult_struct, rusult_struct | any) :: rusult_struct | any
   defdelegate if_err(lhs, rhs), to: Rusult.Binary
 end
