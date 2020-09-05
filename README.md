@@ -1,8 +1,22 @@
+%{
+  app: :rusult,
+  description: "Result struct based on the Rust Result object.",
+  elixir: "~> 1.9",
+  module: "Rusult",
+  module_name: "Rusult",
+  name: "Rusult",
+  package: [
+    licenses: ["Unlicense"],
+    links: %{"GitHub" => "https://github.com/thomas9911/rusult"}
+  ],
+  template_path: "./readme.eex",
+  version: "1.0.0"
+}
 # Rusult
 
 [![Hex.pm](https://img.shields.io/hexpm/v/rusult)](https://hex.pm/packages/rusult)
 ![Hex.pm](https://img.shields.io/hexpm/l/rusult)
-![Hex.pm](https://img.shields.io/hexpm/l/rusult)
+![Hex.pm](https://img.shields.io/hexpm/dt/rusult)
 
 ## Installation
 
